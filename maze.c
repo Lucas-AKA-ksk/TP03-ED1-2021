@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "maze.h"
+#include "list.h"
+#include "stack.h"
 #include "utility.h"
+#include "maze.h"
 #define LINE_SIZE 100
 
-/* Should i change it to int return type? */
+/* explanatory comment here */
 int getMazeFromFile(const char* filename, Maze* maze)
 {
     int c;
-    int i,j; // might not need, delete later
     int row,col;
     char MazeInfo[LINE_SIZE];
     char delim[4] = " xX";
@@ -17,13 +18,14 @@ int getMazeFromFile(const char* filename, Maze* maze)
     FILE *fp;
     if(!(fp = fopen(filename,"r")))
     {
-        perror("Não foi possivel abrir o trtrttarquivo.");
+        perror("Não foi possivel abrir o arquivo.");
         return(EXIT_FAILURE);
     }
     
     /* Checando se o arquivo não está vazio */
     if(isEmptyFile(fp))
     {
+        fclose(fp);
         perror("Arquivo vazio.");
         return(EXIT_FAILURE);
     }
@@ -56,6 +58,7 @@ int getMazeFromFile(const char* filename, Maze* maze)
      com error handling em caso de falha de alocação*/
     if((maze->maze = create_2d_array(maze->sizeX,maze->sizeY))==NULL)
     {
+        fclose(fp);
         perror("Falha na alocação da matriz.");
         return(EXIT_FAILURE);
     }
@@ -81,12 +84,118 @@ int getMazeFromFile(const char* filename, Maze* maze)
         /* Caso o caractere lido seja inválido */
         else
         {
-            /* Dealocar aqui ou no main?? eis a questão */
+            fclose(fp);
             free_2d_array(maze->maze,maze->sizeX);
             perror("Caractere invalido no layout do labirinto.");
             return(EXIT_FAILURE);   
         }
     }
+    fclose(fp);
+    return(EXIT_SUCCESS);
+}
+
+stack solveMaze_DFS(Maze maze)
+{
+    TSElement XYs;
+    TLElement trvrsd_coord;
+    XYs.path_row = trvrsd_coord.row = maze.startX;
+    XYs.path_col = trvrsd_coord.col =  maze.startY;
+    stack path = createStack();
+    list traversed = createList();
+    
+    push(path,XYs);
+    insertAtTail(traversed,trvrsd_coord);
+
+    while(path->size)
+    {
+        pop(path,&XYs);
+        
+        /* Caso as coordenadas XYs atuais sejam o fim do labirinto*/
+        if (XYs.path_row == maze.endX && XYs.path_col == maze.endY)
+        {
+            push(path,XYs);
+            endlist(traversed);
+            return path;
+        }
+        /* Caso o caminho a esquerda (col-1) seja valido e ainda não tenha sido percorrido */
+        else if (XYs.path_col-1 >= 0 && maze.maze[XYs.path_row][XYs.path_col-1] != '#' && !searchList(traversed,XYs.path_row,XYs.path_col-1))
+        {
+            push(path,XYs);
+            XYs.path_col--;
+            trvrsd_coord.row = XYs.path_row;
+            trvrsd_coord.col = XYs.path_col;
+            push(path,XYs);
+            insertAtTail(traversed,trvrsd_coord);
+        }
+        /* Caso o caminho a direita (col+1) seja valido e ainda não tenha sido percorrido */
+        else if (XYs.path_col+1 < maze.sizeY && maze.maze[XYs.path_row][XYs.path_col+1] != '#' && !searchList(traversed,XYs.path_row,XYs.path_col+1))
+        {
+            push(path,XYs);
+            XYs.path_col++;
+            trvrsd_coord.row = XYs.path_row;
+            trvrsd_coord.col = XYs.path_col;
+            push(path,XYs);
+            insertAtTail(traversed,trvrsd_coord);
+        }
+        /* Caso o caminho acima (row-1) seja valido e ainda não tenha sido percorrido */
+        else if (XYs.path_row-1 >= 0 && maze.maze[XYs.path_row-1][XYs.path_col] != '#' && !searchList(traversed, XYs.path_row-1,XYs.path_col))
+        {
+            push(path,XYs);
+            XYs.path_row--;
+            trvrsd_coord.row = XYs.path_row;
+            trvrsd_coord.col = XYs.path_col;
+            push(path,XYs);
+            insertAtTail(traversed,trvrsd_coord);
+        }
+        /* Caso o caminho a direita (row+1) seja válido e ainda não tenha sido percorrido */
+        else if (XYs.path_row+1 < maze.sizeX && maze.maze[XYs.path_row+1][XYs.path_col] != '#' && !searchList(traversed,XYs.path_row+1,XYs.path_col))
+        {
+            push(path,XYs);
+            XYs.path_row++;
+            trvrsd_coord.row = XYs.path_row;
+            trvrsd_coord.col = XYs.path_col;
+            push(path,XYs);
+            insertAtTail(traversed,trvrsd_coord);
+        }
+    }
+    endStack(path);
+    return NULL;
+}
+
+int saveSolutionToFile(const char* filename, Maze maze,stack solution)
+{
+    TSElement XYs;
+    FILE *fp;
+
+    if(!(fp = fopen(filename,"w")))
+    {
+        perror("Não foi possivel abrir o arquivo.");
+        return(EXIT_FAILURE);
+    }
+
+    fprintf(fp,"Caminho percorrido pelo algoritmo:\n\n");
+    for (size_t i = 0; i < maze.sizeX; i++)
+    {
+        for (size_t j = 0; j < maze.sizeY; j++)
+        {
+            if(searchStack(solution,i,j))
+                fprintf(fp,"[%c]",maze.maze[i][j]);
+            else
+                fprintf(fp,"[+]");
+        }   
+        fprintf(fp,"\n");
+    }
+    
+    fprintf(fp,"\nCoordenadas em ordem:\n");
+    reverseStack(solution);
+    while(solution->top){
+        pop(solution,&XYs);
+        fprintf(fp,"\n[%d][%d]",XYs.path_row,XYs.path_col);
+    }
+    
+    printf("\nA solução do labirinto foi salva no arquivo %s",filename);
+    fclose(fp);
+
     return(EXIT_SUCCESS);
 }
 
@@ -116,10 +225,10 @@ void free_2d_array(char ** array, int rows)
 int isEmptyFile(FILE *fp)
 {
     int size;
-    fseek(fp,0,SEEK_SET);
+    fseek(fp,0,SEEK_END);
     size = ftell(fp);
     fseek(fp,0,SEEK_SET);
     if(size > 0)
-        return 1;
-    return 0;
+        return 0;
+    return 1;
 }

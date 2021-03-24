@@ -1,9 +1,6 @@
 #ifndef MAZE_H_DEFINED
 #define MAZE_H_DEFINED
 
-//#define LINE_SIZE 100
-
-
 typedef struct
 {
     char **maze;
@@ -12,6 +9,10 @@ typedef struct
 }Maze;
 
 int getMazeFromFile(const char* filename, Maze* maze);
+
+stack solveMaze_DFS(Maze maze);
+
+int saveSolutionToFile(const char* filename, Maze maze,stack solution);
 
 char ** create_2d_array(int rows, int cols);
 
