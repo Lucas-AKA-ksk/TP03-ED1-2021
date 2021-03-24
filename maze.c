@@ -98,11 +98,13 @@ stack solveMaze_DFS(Maze maze)
 {
     TSElement XYs;
     TLElement trvrsd_coord;
-    XYs.path_row = trvrsd_coord.row = maze.startX;
-    XYs.path_col = trvrsd_coord.col =  maze.startY;
     stack path = createStack();
     list traversed = createList();
-    
+
+    /* Inicializa os elementos com as coordenadas do início
+     do labirinto e insere na pilha e na lista */
+    XYs.path_row = trvrsd_coord.row = maze.startX;
+    XYs.path_col = trvrsd_coord.col =  maze.startY;
     push(path,XYs);
     insertAtTail(traversed,trvrsd_coord);
 
@@ -167,12 +169,17 @@ int saveSolutionToFile(const char* filename, Maze maze,stack solution)
     TSElement XYs;
     FILE *fp;
 
+    /* Abertura do arquivo, com error handling */
     if(!(fp = fopen(filename,"w")))
     {
         perror("Não foi possivel abrir o arquivo.");
         return(EXIT_FAILURE);
     }
 
+    /* Printando o labirinto solucionado no arquivo
+     onde o caminho percorrido é representado por zeros 
+     e as demais posições, sejam paredes ou caminhos invalidos, 
+     representados por '+' */
     fprintf(fp,"Caminho percorrido pelo algoritmo:\n\n");
     for (size_t i = 0; i < maze.sizeX; i++)
     {
@@ -186,7 +193,10 @@ int saveSolutionToFile(const char* filename, Maze maze,stack solution)
         fprintf(fp,"\n");
     }
     
-    fprintf(fp,"\nCoordenadas em ordem:\n");
+    /* Printando as coordenadas percorridas para solucionar o labirinto 
+     no arquivo, em ordem do inicio ao fim (o que requer que a ordem dos 
+     elementos da pilha seja invertida) */
+    fprintf(fp,"\nCoordenadas percorridas em ordem:\n");
     reverseStack(solution);
     while(solution->top){
         pop(solution,&XYs);
