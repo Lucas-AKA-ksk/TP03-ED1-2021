@@ -7,7 +7,7 @@
 #include "maze.h"
 #define LINE_SIZE 100
 
-/* explanatory comment here */
+/* Lê as informações do arquivo que contém o labirinto e suas infos */
 int getMazeFromFile(const char* filename, Maze* maze)
 {
     int c;
@@ -16,6 +16,7 @@ int getMazeFromFile(const char* filename, Maze* maze)
     char delim[4] = " xX";
     char *infoToken, *endptr;
     FILE *fp;
+    /* Abertura do arquivo com error handling */
     if(!(fp = fopen(filename,"r")))
     {
         perror("Não foi possivel abrir o arquivo.");
@@ -94,6 +95,8 @@ int getMazeFromFile(const char* filename, Maze* maze)
     return(EXIT_SUCCESS);
 }
 
+/* Função responsável por solucionar o labirinto com as informações
+ contidas na struct maze */
 stack solveMaze_DFS(Maze maze)
 {
     TSElement XYs;
@@ -164,6 +167,9 @@ stack solveMaze_DFS(Maze maze)
     return NULL;
 }
 
+/* Printa o caminho percorrido pelo algoritmo de solução
+ (ocultando os demais caminhos), assim como as coordenadas percorridas
+ em ordem do início ao fim do labirinto */
 int saveSolutionToFile(const char* filename, Maze maze,stack solution)
 {
     TSElement XYs;
